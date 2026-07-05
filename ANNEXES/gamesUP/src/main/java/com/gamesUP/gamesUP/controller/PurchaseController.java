@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,26 +23,31 @@ public class PurchaseController {
 
     private final PurchaseService purchaseService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/api/purchases")
     public List<PurchaseResponse> findAll() {
         return purchaseService.findAll();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/api/purchases/{id}")
     public PurchaseResponse findById(@PathVariable Long id) {
         return purchaseService.findById(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/api/purchases/{id}/status")
     public PurchaseResponse updateStatus(@PathVariable Long id, @Valid @RequestBody PurchaseStatusUpdateRequest request) {
         return purchaseService.updateStatus(id, request);
     }
 
+    @PreAuthorize("#userId == principal.id or hasRole('ADMIN')")
     @GetMapping("/api/users/{userId}/purchases")
     public List<PurchaseResponse> findByUser(@PathVariable Long userId) {
         return purchaseService.findByUser(userId);
     }
 
+    @PreAuthorize("#userId == principal.id or hasRole('ADMIN')")
     @PostMapping("/api/users/{userId}/purchases")
     public ResponseEntity<PurchaseResponse> create(
             @PathVariable Long userId, @Valid @RequestBody PurchaseCreateRequest request) {

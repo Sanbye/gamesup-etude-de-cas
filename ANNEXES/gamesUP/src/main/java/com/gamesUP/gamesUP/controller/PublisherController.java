@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/publishers")
@@ -34,16 +35,19 @@ public class PublisherController {
         return publisherService.findById(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<PublisherResponse> create(@Valid @RequestBody PublisherRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(publisherService.create(request));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public PublisherResponse update(@PathVariable Long id, @Valid @RequestBody PublisherRequest request) {
         return publisherService.update(id, request);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         publisherService.delete(id);

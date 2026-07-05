@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/users/{userId}/wishlist")
 @RequiredArgsConstructor
+@PreAuthorize("#userId == principal.id or hasRole('ADMIN')")
 public class WishlistController {
 
     private final WishlistService wishlistService;

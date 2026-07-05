@@ -55,9 +55,9 @@ Les mappers (`mapper/*Mapper`) sont des `@Component` Spring injectés dans les s
 | Jeux | `GET /api/games` (recherche : `name`, `categoryId`, `publisherId`, `authorId`, `minPrice`, `maxPrice`, `inStock`), `GET/PUT/DELETE /api/games/{id}`, `POST /api/games` |
 | Utilisateurs | `POST /api/users/register`, `GET /api/users`, `GET/PUT/DELETE /api/users/{id}`, `PATCH /api/users/{id}/role` |
 | Commandes | `GET/POST /api/users/{userId}/purchases`, `GET /api/purchases`, `GET /api/purchases/{id}`, `PATCH /api/purchases/{id}/status` |
-| Avis | `GET /api/games/{gameId}/reviews`, `POST /api/users/{userId}/reviews`, `DELETE /api/reviews/{id}` |
+| Avis | `GET /api/games/{gameId}/reviews`, `POST /api/users/{userId}/reviews`, `PUT/DELETE /api/reviews/{id}` |
 | Wishlist | `GET /api/users/{userId}/wishlist`, `POST /api/users/{userId}/wishlist/items`, `DELETE /api/users/{userId}/wishlist/items/{gameId}` |
 
-Ces endpoints n'ont pas encore de contrôle d'accès par rôle (client/admin) : c'est l'objet de l'étape 3 (Spring Security). Pour l'instant, l'identifiant utilisateur transite explicitement dans l'URL (ex. `{userId}`) ; il sera remplacé par l'utilisateur authentifié une fois la sécurité en place, sans changer la signature des méthodes de service.
+Le contrôle d'accès par rôle (client/admin) et par propriétaire est désormais en place via Spring Security — voir [docs/04-securite-tests.md](04-securite-tests.md).
 
 Le projet compile intégralement (`./mvnw compile`).

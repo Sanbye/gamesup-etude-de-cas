@@ -10,5 +10,7 @@ public interface ReviewService {
 
     ReviewResponse create(Long userId, ReviewRequest request);
 
+    ReviewResponse update(Long id, ReviewRequest request);
+
     void delete(Long id);
 }

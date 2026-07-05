@@ -1,9 +1,8 @@
 package com.gamesUP.gamesUP.security;
 
 /**
- * Abstraction isolant UserService de la stratégie de hachage de mot de passe. L'implémentation
- * temporaire {@link NoOpPasswordHasher} sera remplacée par un hachage BCrypt à l'étape 3, une fois
- * Spring Security mis en place, sans modifier le code appelant (principe ouvert/fermé).
+ * Abstraction isolant UserService de la stratégie de hachage de mot de passe. Implémentée par
+ * {@link BCryptPasswordHasher} (principe ouvert/fermé : UserService ne dépend jamais de BCrypt directement).
  */
 public interface PasswordHasher {
 

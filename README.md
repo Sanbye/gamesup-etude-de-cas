@@ -101,15 +101,22 @@ Points clés :
 - Services métier avec interface + implémentation (Dependency Inversion), une interface par agrégat (Interface Segregation).
 - DTOs (records) systématiques en entrée/sortie d'API : aucune entité JPA n'est exposée directement.
 - Règles métier implémentées : décrément de stock atomique à la commande, prix figé sur la ligne de commande, blocage de la suppression d'un utilisateur ayant des commandes.
-- `PasswordHasher` : abstraction posée dès maintenant (implémentation temporaire `NoOpPasswordHasher`) pour introduire le hachage BCrypt à l'étape 3 sans modifier `UserService`.
+- `PasswordHasher` : abstraction posée à l'étape 2, implémentée à l'étape 3 par `BCryptPasswordHasher` sans modifier `UserService` (principe ouvert/fermé).
 
 ### Reste à faire pour cette étape
 
-- Rien : le CRUD de base, les DTOs et la recherche de jeux sont en place. La suite (sécurité, rôles, tests) fait l'objet de l'étape 3.
+- Rien : le CRUD de base, les DTOs et la recherche de jeux sont en place.
 
 ## Étape 3 — Sécurisation et tests
 
-_À venir._
+Spring Security (JWT stateless) et une suite de tests complète sont en place. Détail complet : [docs/04-securite-tests.md](docs/04-securite-tests.md).
+
+Points clés :
+- Authentification par JWT : `POST /api/auth/login`, filtre `JwtAuthenticationFilter`, mot de passe haché en BCrypt (`BCryptPasswordHasher` remplace le temporaire de l'étape 2).
+- Autorisation par rôle (`hasRole('ADMIN')`) et par propriétaire (`#userId == principal.id or hasRole('ADMIN')`, bean dédié `reviewSecurity` pour les avis) via `@PreAuthorize`.
+- Réponses d'erreur JSON cohérentes (401/403) via `RestAuthenticationEntryPoint` / `RestAccessDeniedHandler`, réutilisant le format `ApiError` existant.
+- 74 tests (53 unitaires sur les services avec Mockito, 20 d'intégration avec `MockMvc` + H2 couvrant les flux d'authentification et les règles d'autorisation de bout en bout, plus le test de chargement de contexte).
+- Couverture de code (JaCoCo) : **86,2 %**, largement au-dessus de l'objectif de 70 %.
 
 ## Étape 4 — Système de recommandation
 
