@@ -14,7 +14,8 @@ Objectif : reprendre les classes `model` du stagiaire, corriger les incohérence
 - **COMMANDE** : id, date de commande, statut
 - **LIGNE_COMMANDE** : id, quantité, prix unitaire
 - **AVIS** : id, commentaire, note, date
-- **WISHLIST** : id, date d'ajout
+- **WISHLIST** : id (une par utilisateur)
+- **LIGNE_WISHLIST** : id, date d'ajout
 
 ### Associations et cardinalités
 
@@ -28,7 +29,9 @@ Objectif : reprendre les classes `model` du stagiaire, corriger les incohérence
 | LIGNE_COMMANDE — CONCERNE — JEU | (0,n) — (1,1) | une ligne porte sur un seul jeu |
 | UTILISATEUR — REDIGE — AVIS | (1,1) — (0,n) | un avis appartient à un seul utilisateur |
 | AVIS — PORTE_SUR — JEU | (0,n) — (1,1) | un avis porte sur un seul jeu |
-| UTILISATEUR — WISHLIST — JEU | (0,n) — (0,n) | association porteuse d'un attribut (date d'ajout) → devient l'entité `WISHLIST` |
+| UTILISATEUR — POSSEDE — WISHLIST | (1,1) — (1,1) | un utilisateur a exactement une liste de souhaits |
+| WISHLIST — CONTIENT — LIGNE_WISHLIST | (1,1) — (0,n) | une wishlist contient plusieurs lignes (mêmes principes que COMMANDE/LIGNE_COMMANDE) |
+| LIGNE_WISHLIST — CONCERNE — JEU | (0,n) — (1,1) | un même jeu peut être présent dans les lignes de wishlist de plusieurs utilisateurs différents, mais une seule fois par wishlist |
 
 ## 2. Modèle Logique de Données (MLD)
 
@@ -42,7 +45,8 @@ JEU_AUTEUR (#jeu_id, #auteur_id)
 COMMANDE (id, date_commande, statut, #utilisateur_id)
 LIGNE_COMMANDE (id, quantite, prix_unitaire, #commande_id, #jeu_id)
 AVIS (id, commentaire, note, date_avis, #utilisateur_id, #jeu_id)
-WISHLIST (id, date_ajout, #utilisateur_id, #jeu_id) -- unique(utilisateur_id, jeu_id)
+WISHLIST (id, #utilisateur_id) -- unique(utilisateur_id)
+LIGNE_WISHLIST (id, date_ajout, #wishlist_id, #jeu_id) -- unique(wishlist_id, jeu_id)
 ```
 
 ## 3. Diagramme de classes (modèle objet / JPA)
@@ -119,19 +123,25 @@ classDiagram
 
     class Wishlist {
         +Long id
+    }
+
+    class WishlistItem {
+        +Long id
         +LocalDateTime addedAt
     }
 
     User "1" --> "0..*" Purchase : passe
     User "1" --> "0..*" Review : rédige
-    User "1" --> "0..*" Wishlist : possède
+    User "1" --> "1" Wishlist : possède
     User "1" --> "1" Role
 
     Purchase "1" o-- "0..*" PurchaseLine : contient
     Purchase "1" --> "1" OrderStatus
 
+    Wishlist "1" o-- "0..*" WishlistItem : contient
+
     PurchaseLine "0..*" --> "1" Game : concerne
-    Wishlist "0..*" --> "1" Game
+    WishlistItem "0..*" --> "1" Game
     Review "0..*" --> "1" Game : porte sur
 
     Game "0..*" --> "1" Category : appartient à
@@ -151,7 +161,7 @@ classDiagram
 | `Purchase` avec 3 booléens (`paid`, `delivered`, `archived`) | Remplacés par un unique enum `OrderStatus` (`PENDING`, `PAID`, `DELIVERED`, `CANCELLED`) | Ces états sont mutuellement exclusifs ; des booléens indépendants permettent des combinaisons incohérentes (ex : `archived=true` et `paid=false`) |
 | `PurchaseLine` sans quantité | Ajout de `quantity` et renommage de `prix` en `unitPrice` (prix figé au moment de l'achat) | Une ligne de commande doit pouvoir porter plusieurs exemplaires ; le prix doit être conservé même si le prix catalogue change ensuite |
 | `Avis` sans lien vers l'utilisateur ni le jeu concerné | Renommé en `Review`, ajout de `user` et `game` (`@ManyToOne`) | Un avis n'a de sens que rattaché à un auteur et à un jeu |
-| `Wishlist` : classe vide | Devient une entité porteuse (`user`, `game`, `addedAt`) avec contrainte d'unicité `(user_id, game_id)` | L'association many-to-many porte un attribut (date d'ajout), elle doit donc devenir sa propre entité (règle Merise) |
+| `Wishlist` : classe vide | Devient une entité `Wishlist` (une par utilisateur, `@OneToOne`) contenant des `WishlistItem` (`game`, `addedAt`), sur le même principe que `Purchase`/`PurchaseLine` | Un utilisateur ne possède qu'**une seule** liste de souhaits, qui référence plusieurs jeux ; un même jeu peut en revanche apparaître dans les wishlists de plusieurs utilisateurs différents. La première version confondait à tort « wishlist » et « ligne de wishlist » |
 | `User` minimal (`id`, `nom`) | Ajout de `firstName`, `lastName`, `email`, `password`, `role`, `createdAt` | Nécessaire pour l'authentification (étape 3) et la distinction client/admin (étape 1) |
 | Identifiants de type mêlé (`int` pour `Game`/`User`/`PurchaseLine`, `Long` pour `Author`) | Toutes les clés primaires standardisées en `Long` avec `GenerationType.IDENTITY` | Cohérence, compatible avec l'auto-incrément MySQL |
 | Champs publics non encapsulés | Lombok (`@Getter`/`@Setter`/`@NoArgsConstructor`/`@AllArgsConstructor`/`@Builder`) | Encapsulation correcte, code concis, cohérent avec la dépendance Lombok déjà présente dans le `pom.xml` |
