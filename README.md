@@ -115,10 +115,20 @@ Points clés :
 - Authentification par JWT : `POST /api/auth/login`, filtre `JwtAuthenticationFilter`, mot de passe haché en BCrypt (`BCryptPasswordHasher` remplace le temporaire de l'étape 2).
 - Autorisation par rôle (`hasRole('ADMIN')`) et par propriétaire (`#userId == principal.id or hasRole('ADMIN')`, bean dédié `reviewSecurity` pour les avis) via `@PreAuthorize`.
 - Réponses d'erreur JSON cohérentes (401/403) via `RestAuthenticationEntryPoint` / `RestAccessDeniedHandler`, réutilisant le format `ApiError` existant.
-- 74 tests (53 unitaires sur les services avec Mockito, 20 d'intégration avec `MockMvc` + H2 couvrant les flux d'authentification et les règles d'autorisation de bout en bout, plus le test de chargement de contexte).
-- Couverture de code (JaCoCo) : **86,2 %**, largement au-dessus de l'objectif de 70 %.
+- 74 tests à l'origine (53 unitaires sur les services avec Mockito, 20 d'intégration avec `MockMvc` + H2 couvrant les flux d'authentification et les règles d'autorisation de bout en bout, plus le test de chargement de contexte). Couverture JaCoCo mesurée à l'époque : 86,2 %.
+- ⚠️ Un défaut de configuration Maven découvert à l'étape 4 rendait l'exécution des tests d'intégration (`*IT`) non fiable (voir étape 4) ; les chiffres ci-dessus doivent être relus à la lumière du correctif.
 
 ## Étape 4 — Système de recommandation
+
+Le modèle KNN (filtrage collaboratif) est implémenté côté API Python, et l'API Spring lui envoie l'historique d'achats/avis de l'utilisateur pour récupérer des recommandations. Détail complet : [docs/05-systeme-recommandation.md](docs/05-systeme-recommandation.md).
+
+Points clés :
+- **API Python** (`ANNEXES/CodeApiPython`) : `recommendation.py` implémente l'entraînement (`train_model`, `sklearn.neighbors.NearestNeighbors`, persistance via `joblib`) et l'inférence (`generate_recommendations`) ; `train.py` est le script d'entraînement, séparé de l'API. Tant qu'aucune donnée réelle n'est disponible, l'API renvoie une liste de recommandations de test (conforme à la consigne). Ajout de `requirements.txt` et d'un `README.md` détaillant le format de données attendu.
+- **Spring → Python** : `RecommendationController` (`GET /api/users/{userId}/recommendations`) → `RecommendationService` (reconstruit l'historique utilisateur à partir des achats/avis) → `RecommendationClient` (appel HTTP via `RestClient`, erreurs réseau traduites en 503). Réponse enrichie avec les données du catalogue local quand le jeu recommandé y existe.
+- **Tests** : uniquement côté Spring (conformément à la consigne de ne pas tester l'API Python) — `RecommendationServiceImplTest` (unitaire) et `RecommendationControllerIT` (intégration, `RecommendationClient` simulé).
+- **Correctif de fiabilité** : l'inclusion des tests `*IT` par Maven Surefire n'était pas déterministe (non documentée par défaut pour ce plugin) ; désormais fixée explicitement dans `pom.xml`. Après ce correctif : **81 tests, 0 échec, couverture JaCoCo 85,2 %** (reproductible sur plusieurs `./mvnw clean test` consécutifs).
+
+## Étape 5 — Documentation finale
 
 _À venir._
 

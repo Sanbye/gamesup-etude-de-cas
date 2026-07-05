@@ -19,6 +19,8 @@ venv/
 env/
 .env
 *.egg-info/
+ANNEXES/CodeApiPython/models/
+*.joblib
 
 # Java/Maven build output
 target/
