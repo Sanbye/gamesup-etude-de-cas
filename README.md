@@ -82,52 +82,40 @@ Cette analyse sert de base à la refonte du modèle de données (Hibernate/JPA) 
 
 ## Étape 2 — Refonte de l'API Spring
 
-### Modèle relationnel et entités 
+### Modèle relationnel et entités
 
-Le modèle de données a été repensé avec une démarche Merise (MCD → MLD → modèle objet JPA/Hibernate), à partir des entités déjà esquissées par le stagiaire. Détail complet, schéma relationnel et diagramme de classes : [docs/02-modele-donnees.md](docs/02-modele-donnees.md).
+Le modèle de données a été repensé avec une démarche Merise (MCD → MLD → modèle objet JPA/Hibernate), à partir des entités déjà esquissées par le stagiaire. Toutes les entités (`User`, `Game`, `Category`, `Publisher`, `Author`, `Purchase`, `PurchaseLine`, `Review`, `Wishlist`) sont maintenant des `@Entity` JPA correctement reliées entre elles — fini le JDBC brut et les objets non persistables. Au passage, plusieurs incohérences du code repris ont été corrigées : `Game.auteur`/`genre` faisaient doublon, `Inventory` n'était pas persistable, `Purchase` n'avait ni utilisateur ni statut cohérent, `Avis`/`Wishlist` n'avaient aucune relation.
 
-Points clés :
-- Toutes les entités (`User`, `Game`, `Category`, `Publisher`, `Author`, `Purchase`, `PurchaseLine`, `Review`, `Wishlist`) sont désormais des `@Entity` JPA correctement liées entre elles (fini le JDBC brut et les objets non persistables).
-- Correction des incohérences du code repris : `Game.auteur`/`genre` en doublon, `Inventory` non persistable, `Purchase` sans utilisateur ni statut cohérent, `Avis`/`Wishlist` sans relations.
-- `Wishlist` corrigée une deuxième fois suite à une relecture : une seule wishlist par utilisateur, contenant plusieurs `WishlistItem` (même principe que `Purchase`/`PurchaseLine`), au lieu d'une ligne par (utilisateur, jeu).
-- `GameController` (JDBC brut, identifiants MySQL en dur) a été supprimé : il a été remplacé par une architecture en couches complète (voir ci-dessous).
+La `Wishlist` a d'ailleurs été corrigée une seconde fois après relecture : c'est bien une seule wishlist par utilisateur, contenant plusieurs `WishlistItem` (même principe que `Purchase`/`PurchaseLine`), et pas une ligne par couple utilisateur/jeu comme dans la première version. `GameController`, qui faisait du JDBC brut avec les identifiants MySQL en dur, a été supprimé et remplacé par l'architecture en couches ci-dessous.
 
-### Architecture en couches 
+Détail complet, schéma relationnel et diagramme de classes : [docs/02-modele-donnees.md](docs/02-modele-donnees.md).
 
-`GameController` a été remplacé par une architecture complète : `controller → service (interface + impl) → repository (Spring Data JPA) → Hibernate`, avec DTOs (records), mappers, gestion centralisée des exceptions (`GlobalExceptionHandler`) et recherche de jeux via `Specification` dynamiques. Détail complet (structure des packages, application des principes SOLID, liste des endpoints) : [docs/03-architecture-api.md](docs/03-architecture-api.md).
+### Architecture en couches
 
-Points clés :
-- Repositories Spring Data JPA pour chaque agrégat, `GameRepository` en `JpaSpecificationExecutor` pour la recherche multi-critères.
-- Services métier avec interface + implémentation (Dependency Inversion), une interface par agrégat (Interface Segregation).
-- DTOs (records) systématiques en entrée/sortie d'API : aucune entité JPA n'est exposée directement.
-- Règles métier implémentées : décrément de stock atomique à la commande, prix figé sur la ligne de commande, blocage de la suppression d'un utilisateur ayant des commandes.
-- `PasswordHasher` : abstraction posée à l'étape 2, implémentée à l'étape 3 par `BCryptPasswordHasher` sans modifier `UserService` (principe ouvert/fermé).
+`GameController` a été remplacé par une architecture complète : `controller → service (interface + impl) → repository (Spring Data JPA) → Hibernate`, avec des DTOs (records), des mappers, une gestion centralisée des exceptions (`GlobalExceptionHandler`) et une recherche de jeux basée sur des `Specification` dynamiques. Chaque agrégat a son repository Spring Data JPA, `GameRepository` passant par `JpaSpecificationExecutor` pour la recherche multi-critères ; les services suivent le même principe, une interface par agrégat plus son implémentation, pour respecter l'inversion de dépendance et la ségrégation d'interfaces.
 
-### Reste à faire pour cette étape
+Quelques règles métier ont été posées à ce stade : décrément de stock atomique à la commande, prix figé sur la ligne de commande, impossibilité de supprimer un utilisateur qui a des commandes. `PasswordHasher` a aussi été introduit ici comme abstraction, avant même que Spring Security existe, pour être implémentée à l'étape 3 par `BCryptPasswordHasher` sans toucher à `UserService`.
 
-- Rien : le CRUD de base, les DTOs et la recherche de jeux sont en place.
+Détail complet (structure des packages, principes SOLID, liste des endpoints) : [docs/03-architecture-api.md](docs/03-architecture-api.md). Rien à signaler comme reste à faire : CRUD, DTOs et recherche de jeux sont en place.
 
 ## Étape 3 — Sécurisation et tests
 
-Spring Security (JWT stateless) et une suite de tests complète sont en place. Détail complet : [docs/04-securite-tests.md](docs/04-securite-tests.md).
+Spring Security (JWT stateless) et une suite de tests complète sont en place. L'authentification passe par `POST /api/auth/login` et le filtre `JwtAuthenticationFilter`, mot de passe haché en BCrypt. L'autorisation combine des règles par rôle (`hasRole('ADMIN')`) et par propriétaire (`#userId == principal.id or hasRole('ADMIN')`, avec un bean dédié `reviewSecurity` pour les avis), le tout via `@PreAuthorize`. Les erreurs d'authentification et d'autorisation renvoient du JSON cohérent (401/403) grâce à `RestAuthenticationEntryPoint` et `RestAccessDeniedHandler`, qui réutilisent le format `ApiError` déjà en place.
 
-Points clés :
-- Authentification par JWT : `POST /api/auth/login`, filtre `JwtAuthenticationFilter`, mot de passe haché en BCrypt (`BCryptPasswordHasher` remplace le temporaire de l'étape 2).
-- Autorisation par rôle (`hasRole('ADMIN')`) et par propriétaire (`#userId == principal.id or hasRole('ADMIN')`, bean dédié `reviewSecurity` pour les avis) via `@PreAuthorize`.
-- Réponses d'erreur JSON cohérentes (401/403) via `RestAuthenticationEntryPoint` / `RestAccessDeniedHandler`, réutilisant le format `ApiError` existant.
-- 74 tests à l'origine (53 unitaires sur les services avec Mockito, 20 d'intégration avec `MockMvc` + H2 couvrant les flux d'authentification et les règles d'autorisation de bout en bout, plus le test de chargement de contexte). Couverture JaCoCo mesurée à l'époque : 86,2 %.
-- ⚠️ Un défaut de configuration Maven découvert à l'étape 4 rendait l'exécution des tests d'intégration (`*IT`) non fiable (voir étape 4) ; les chiffres ci-dessus doivent être relus à la lumière du correctif.
+À l'époque, cette étape s'est terminée sur 74 tests (53 unitaires sur les services, 20 d'intégration `MockMvc` + H2, plus le test de contexte) et une couverture JaCoCo de 86,2 %. ⚠️ Un défaut de configuration Maven découvert à l'étape 4 rendait en fait l'exécution des tests `*IT` peu fiable — ces chiffres sont donc à relire à la lumière du correctif décrit plus bas.
+
+Détail complet : [docs/04-securite-tests.md](docs/04-securite-tests.md).
 
 ## Étape 4 — Système de recommandation
 
-Le modèle KNN (filtrage collaboratif) est implémenté côté API Python, et l'API Spring lui envoie l'historique d'achats/avis de l'utilisateur pour récupérer des recommandations. Détail complet : [docs/05-systeme-recommandation.md](docs/05-systeme-recommandation.md).
+Le modèle KNN (filtrage collaboratif) est implémenté côté API Python, et l'API Spring lui envoie l'historique d'achats/avis de l'utilisateur pour récupérer des recommandations. Côté Python (`ANNEXES/CodeApiPython`), `recommendation.py` porte l'entraînement (`train_model`, `sklearn.neighbors.NearestNeighbors`, persistance via `joblib`) et l'inférence (`generate_recommendations`), avec `train.py` comme script d'entraînement séparé de l'API. Tant qu'aucune donnée réelle n'est disponible, l'API renvoie une liste de recommandations de test, conformément à la consigne — `requirements.txt` et un `README.md` détaillant le format de données attendu ont été ajoutés au passage.
 
-Points clés :
-- **API Python** (`ANNEXES/CodeApiPython`) : `recommendation.py` implémente l'entraînement (`train_model`, `sklearn.neighbors.NearestNeighbors`, persistance via `joblib`) et l'inférence (`generate_recommendations`) ; `train.py` est le script d'entraînement, séparé de l'API. Tant qu'aucune donnée réelle n'est disponible, l'API renvoie une liste de recommandations de test (conforme à la consigne). Ajout de `requirements.txt` et d'un `README.md` détaillant le format de données attendu.
-- **Spring → Python** : `RecommendationController` (`GET /api/users/{userId}/recommendations`) → `RecommendationService` (reconstruit l'historique utilisateur à partir des achats/avis) → `RecommendationClient` (appel HTTP via `RestClient`, erreurs réseau traduites en 503). Réponse enrichie avec les données du catalogue local quand le jeu recommandé y existe.
-- **Tests** : uniquement côté Spring (conformément à la consigne de ne pas tester l'API Python) — `RecommendationServiceImplTest` (unitaire) et `RecommendationControllerIT` (intégration, `RecommendationClient` simulé).
-- **Correctif de fiabilité** : l'inclusion des tests `*IT` par Maven Surefire n'était pas déterministe (non documentée par défaut pour ce plugin) ; désormais fixée explicitement dans `pom.xml`. Après ce correctif : **81 tests, 0 échec, couverture JaCoCo 85,2 %** (reproductible sur plusieurs `./mvnw clean test` consécutifs).
+Côté Spring, la chaîne est `RecommendationController` (`GET /api/users/{userId}/recommendations`) → `RecommendationService`, qui reconstruit l'historique utilisateur à partir des achats et des avis, → `RecommendationClient`, qui fait l'appel HTTP réel et traduit les erreurs réseau en 503. La réponse est enrichie avec les données du catalogue local quand le jeu recommandé y existe. Les tests ne couvrent que la partie Spring (consigne oblige) : `RecommendationServiceImplTest` en unitaire, `RecommendationControllerIT` en intégration avec `RecommendationClient` simulé.
+
+C'est en ajoutant ces tests qu'un défaut de fiabilité est apparu : Maven Surefire n'incluait pas les tests `*IT` de façon déterministe. Corrigé explicitement dans `pom.xml` — après quoi on obtient de façon reproductible **81 tests, 0 échec, couverture JaCoCo 85,1 %**.
+
+Détail complet : [docs/05-systeme-recommandation.md](docs/05-systeme-recommandation.md).
 
 ## Étape 5 — Documentation finale
 
-Document de synthèse complet (diagrammes d'architecture, de classes, de composants, de séquence, principes SOLID, rapport de couverture, synthèse du système de recommandation, réflexion sur la démarche de travail) : [docs/06-documentation-finale.md](docs/06-documentation-finale.md).
+Document de synthèse complet — diagrammes d'architecture, de classes, de composants, de séquence, principes SOLID, rapport de couverture, synthèse du système de recommandation, et réflexion sur la démarche de travail : [docs/06-documentation-finale.md](docs/06-documentation-finale.md).

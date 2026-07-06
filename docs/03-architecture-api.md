@@ -57,6 +57,8 @@ Les mappers (`mapper/*Mapper`) sont des `@Component` Spring injectés dans les s
 | Commandes | `GET/POST /api/users/{userId}/purchases`, `GET /api/purchases`, `GET /api/purchases/{id}`, `PATCH /api/purchases/{id}/status` |
 | Avis | `GET /api/games/{gameId}/reviews`, `POST /api/users/{userId}/reviews`, `PUT/DELETE /api/reviews/{id}` |
 | Wishlist | `GET /api/users/{userId}/wishlist`, `POST /api/users/{userId}/wishlist/items`, `DELETE /api/users/{userId}/wishlist/items/{gameId}` |
+| Authentification (étape 3) | `POST /api/auth/login` |
+| Recommandation (étape 4) | `GET /api/users/{userId}/recommendations` |
 
 Le contrôle d'accès par rôle (client/admin) et par propriétaire est désormais en place via Spring Security — voir [docs/04-securite-tests.md](04-securite-tests.md).
 

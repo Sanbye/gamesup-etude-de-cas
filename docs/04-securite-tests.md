@@ -60,6 +60,8 @@ Une base `AbstractIntegrationTest` factorise l'obtention de tokens (inscription 
 
 ## 5. Couverture de code
 
+> ⚠️ Chiffres mesurés à l'état du code à la fin de l'étape 3. Un défaut de configuration Maven Surefire (voir étape 4 / [06 — Documentation finale](06-documentation-finale.md#8-réflexion--bonnes-et-mauvaises-pratiques-du-projet)) rendait l'exécution des tests `*IT` non déterministe à ce moment-là ; les chiffres à jour (post-correctif, 81 tests) sont dans [06 — Documentation finale](06-documentation-finale.md#6-rapport-de-couverture-de-tests).
+
 Mesurée avec JaCoCo (`org.jacoco:jacoco-maven-plugin`, rapport généré à chaque `./mvnw test` dans `target/site/jacoco/index.html`) :
 
 | Portée | Couverture (instructions) |

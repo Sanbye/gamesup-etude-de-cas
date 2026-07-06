@@ -56,4 +56,4 @@ En ajoutant ces nouveaux tests, une non-déterminisme est apparue dans l'exécut
 </includes>
 ```
 
-Depuis ce correctif, deux exécutions propres (`./mvnw clean test`) consécutives donnent le même résultat : **81 tests, 0 échec**, couverture JaCoCo **85,2 %** (contre 86,2 % à l'étape 3, la légère baisse s'expliquant par le nouveau code du client HTTP de recommandation, non testé directement puisque simulé dans les tests).
+Depuis ce correctif, plusieurs exécutions propres (`./mvnw clean test`) consécutives donnent le même résultat : **81 tests, 0 échec**, couverture JaCoCo **85,1 %** (contre 86,2 % à l'étape 3, la légère baisse s'expliquant par le nouveau code du client HTTP de recommandation, non testé directement puisque simulé dans les tests ; chiffre à jour et détail par package dans [06 — Documentation finale](06-documentation-finale.md#6-rapport-de-couverture-de-tests)).

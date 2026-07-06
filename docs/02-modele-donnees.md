@@ -136,10 +136,10 @@ classDiagram
     User "1" --> "1" Wishlist : possède
     User "1" --> "1" Role
 
-    Purchase "1" o-- "0..*" PurchaseLine : contient
+    Purchase "1" *-- "0..*" PurchaseLine : contient
     Purchase "1" --> "1" OrderStatus
 
-    Wishlist "1" o-- "0..*" WishlistItem : contient
+    Wishlist "1" *-- "0..*" WishlistItem : contient
 
     PurchaseLine "0..*" --> "1" Game : concerne
     WishlistItem "0..*" --> "1" Game
