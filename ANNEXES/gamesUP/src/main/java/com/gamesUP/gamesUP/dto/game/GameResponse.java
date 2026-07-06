@@ -13,6 +13,6 @@ public record GameResponse(
         BigDecimal price,
         Integer editionYear,
         Integer stockQuantity,
-        CategoryResponse category,
+        Set<CategoryResponse> categories,
         PublisherResponse publisher,
         Set<AuthorResponse> authors) {}

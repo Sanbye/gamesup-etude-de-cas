@@ -1,6 +1,7 @@
 package com.gamesUP.gamesUP.mapper;
 
 import com.gamesUP.gamesUP.dto.author.AuthorResponse;
+import com.gamesUP.gamesUP.dto.category.CategoryResponse;
 import com.gamesUP.gamesUP.dto.game.GameResponse;
 import com.gamesUP.gamesUP.model.Game;
 import java.util.Set;
@@ -17,6 +18,8 @@ public class GameMapper {
     private final AuthorMapper authorMapper;
 
     public GameResponse toResponse(Game game) {
+        Set<CategoryResponse> categories =
+                game.getCategories().stream().map(categoryMapper::toResponse).collect(Collectors.toSet());
         Set<AuthorResponse> authors =
                 game.getAuthors().stream().map(authorMapper::toResponse).collect(Collectors.toSet());
         return new GameResponse(
@@ -26,7 +29,7 @@ public class GameMapper {
                 game.getPrice(),
                 game.getEditionYear(),
                 game.getStockQuantity(),
-                categoryMapper.toResponse(game.getCategory()),
+                categories,
                 publisherMapper.toResponse(game.getPublisher()),
                 authors);
     }

@@ -46,9 +46,13 @@ public class Game {
     @Column(nullable = false)
     private Integer stockQuantity;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @ManyToMany
+    @JoinTable(
+            name = "game_category",
+            joinColumns = @JoinColumn(name = "game_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id"))
+    @Builder.Default
+    private Set<Category> categories = new HashSet<>();
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "publisher_id")

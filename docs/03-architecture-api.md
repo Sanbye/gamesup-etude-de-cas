@@ -35,7 +35,7 @@ Aucune entité JPA n'est jamais exposée directement par un contrôleur (évite 
 - un `XxxResponse` (record, sortie API),
 - un ou plusieurs `XxxRequest` (record, entrée API, validés avec Bean Validation `@NotBlank`, `@NotNull`, `@Min`, `@Email`…).
 
-Les mappers (`mapper/*Mapper`) sont des `@Component` Spring injectés dans les services ; ils ne font que de la conversion, sans accès base de données (la résolution des relations, ex. retrouver la `Category` à partir d'un `categoryId`, reste une responsabilité du service).
+Les mappers (`mapper/*Mapper`) sont des `@Component` Spring injectés dans les services ; ils ne font que de la conversion, sans accès base de données (la résolution des relations, ex. retrouver les `Category` correspondant aux `categoryIds` d'un jeu, reste une responsabilité du service).
 
 ## 4. Points de conception notables
 

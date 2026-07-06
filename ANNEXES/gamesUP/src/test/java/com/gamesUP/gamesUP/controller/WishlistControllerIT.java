@@ -38,7 +38,7 @@ class WishlistControllerIT extends AbstractIntegrationTest {
         long publisherId = objectMapper.readTree(publisherBody).get("id").asLong();
 
         GameRequest gameRequest = new GameRequest(
-                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, categoryId, publisherId, Set.of());
+                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, Set.of(categoryId), publisherId, Set.of());
         String gameBody = mockMvc.perform(post("/api/games")
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)

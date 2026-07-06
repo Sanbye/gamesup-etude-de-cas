@@ -1,6 +1,7 @@
 package com.gamesUP.gamesUP.repository.spec;
 
 import com.gamesUP.gamesUP.model.Author;
+import com.gamesUP.gamesUP.model.Category;
 import com.gamesUP.gamesUP.model.Game;
 import jakarta.persistence.criteria.Join;
 import java.math.BigDecimal;
@@ -23,7 +24,11 @@ public final class GameSpecifications {
         if (categoryId == null) {
             return null;
         }
-        return (root, query, cb) -> cb.equal(root.get("category").get("id"), categoryId);
+        return (root, query, cb) -> {
+            query.distinct(true);
+            Join<Game, Category> categories = root.join("categories");
+            return cb.equal(categories.get("id"), categoryId);
+        };
     }
 
     public static Specification<Game> hasPublisher(Long publisherId) {

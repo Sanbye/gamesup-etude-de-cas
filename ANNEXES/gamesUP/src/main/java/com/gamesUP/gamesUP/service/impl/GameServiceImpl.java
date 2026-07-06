@@ -62,7 +62,7 @@ public class GameServiceImpl implements GameService {
                 .price(request.price())
                 .editionYear(request.editionYear())
                 .stockQuantity(request.stockQuantity())
-                .category(getCategoryOrThrow(request.categoryId()))
+                .categories(resolveCategories(request.categoryIds()))
                 .publisher(getPublisherOrThrow(request.publisherId()))
                 .authors(resolveAuthors(request.authorIds()))
                 .build();
@@ -77,7 +77,7 @@ public class GameServiceImpl implements GameService {
         game.setPrice(request.price());
         game.setEditionYear(request.editionYear());
         game.setStockQuantity(request.stockQuantity());
-        game.setCategory(getCategoryOrThrow(request.categoryId()));
+        game.setCategories(resolveCategories(request.categoryIds()));
         game.setPublisher(getPublisherOrThrow(request.publisherId()));
         game.setAuthors(resolveAuthors(request.authorIds()));
         return gameMapper.toResponse(gameRepository.save(game));
@@ -95,10 +95,12 @@ public class GameServiceImpl implements GameService {
         return gameRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Jeu introuvable : " + id));
     }
 
-    private Category getCategoryOrThrow(Long id) {
-        return categoryRepository
-                .findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Catégorie introuvable : " + id));
+    private Set<Category> resolveCategories(Set<Long> categoryIds) {
+        List<Category> found = categoryRepository.findAllById(categoryIds);
+        if (found.size() != categoryIds.size()) {
+            throw new ResourceNotFoundException("Une ou plusieurs catégories sont introuvables");
+        }
+        return new HashSet<>(found);
     }
 
     private Publisher getPublisherOrThrow(Long id) {

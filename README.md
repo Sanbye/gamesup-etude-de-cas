@@ -68,7 +68,7 @@ Aucun cahier des charges formel n'a été fourni. Le point de départ a donc ét
 
 Critères retenus : nom (texte partiel), auteur, éditeur, catégorie/genre, fourchette de prix, disponibilité en stock — avec tri (prix, nom, popularité) et pagination.
 
-### Faiblesses relevées dans le code repris (à traiter en étape 2)
+### Faiblesses relevées dans le code repris 
 
 - `GameController` exécute des requêtes JDBC brutes avec les identifiants MySQL en dur dans le code (faille de sécurité), alors que `spring-boot-starter-data-jpa` est déjà présent en dépendance mais inutilisé.
 - Aucune annotation JPA (`@Entity`, `@Id`...), pas de repository, pas de service : tout est mélangé dans le contrôleur.
@@ -82,7 +82,7 @@ Cette analyse sert de base à la refonte du modèle de données (Hibernate/JPA) 
 
 ## Étape 2 — Refonte de l'API Spring
 
-### Modèle relationnel et entités (fait)
+### Modèle relationnel et entités 
 
 Le modèle de données a été repensé avec une démarche Merise (MCD → MLD → modèle objet JPA/Hibernate), à partir des entités déjà esquissées par le stagiaire. Détail complet, schéma relationnel et diagramme de classes : [docs/02-modele-donnees.md](docs/02-modele-donnees.md).
 
@@ -92,7 +92,7 @@ Points clés :
 - `Wishlist` corrigée une deuxième fois suite à une relecture : une seule wishlist par utilisateur, contenant plusieurs `WishlistItem` (même principe que `Purchase`/`PurchaseLine`), au lieu d'une ligne par (utilisateur, jeu).
 - `GameController` (JDBC brut, identifiants MySQL en dur) a été supprimé : il a été remplacé par une architecture en couches complète (voir ci-dessous).
 
-### Architecture en couches (fait)
+### Architecture en couches 
 
 `GameController` a été remplacé par une architecture complète : `controller → service (interface + impl) → repository (Spring Data JPA) → Hibernate`, avec DTOs (records), mappers, gestion centralisée des exceptions (`GlobalExceptionHandler`) et recherche de jeux via `Specification` dynamiques. Détail complet (structure des packages, application des principes SOLID, liste des endpoints) : [docs/03-architecture-api.md](docs/03-architecture-api.md).
 
@@ -130,8 +130,4 @@ Points clés :
 
 ## Étape 5 — Documentation finale
 
-_À venir._
-
-## Étape 5 — Documentation finale
-
-_À venir._
+Document de synthèse complet (diagrammes d'architecture, de classes, de composants, de séquence, principes SOLID, rapport de couverture, synthèse du système de recommandation, réflexion sur la démarche de travail) : [docs/06-documentation-finale.md](docs/06-documentation-finale.md).

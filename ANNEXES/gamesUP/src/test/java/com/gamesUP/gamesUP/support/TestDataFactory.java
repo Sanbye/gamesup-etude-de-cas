@@ -8,6 +8,7 @@ import com.gamesUP.gamesUP.model.Role;
 import com.gamesUP.gamesUP.model.User;
 import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.Set;
 
 public final class TestDataFactory {
 
@@ -44,7 +45,7 @@ public final class TestDataFactory {
                 .price(new BigDecimal("39.90"))
                 .editionYear(2010)
                 .stockQuantity(10)
-                .category(category(1L))
+                .categories(Set.of(category(1L)))
                 .publisher(publisher(1L))
                 .authors(new HashSet<>())
                 .build();

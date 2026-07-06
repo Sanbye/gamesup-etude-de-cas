@@ -50,7 +50,7 @@ class GameControllerIT extends AbstractIntegrationTest {
     @Test
     void create_withoutAuthentication_returnsUnauthorized() throws Exception {
         GameRequest request =
-                new GameRequest("7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, 1L, 1L, Set.of());
+                new GameRequest("7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, Set.of(1L), 1L, Set.of());
 
         mockMvc.perform(post("/api/games")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -62,7 +62,7 @@ class GameControllerIT extends AbstractIntegrationTest {
     void create_asClient_returnsForbidden() throws Exception {
         String clientToken = registerAndLoginClient("client.game@gamesup.test", "password123");
         GameRequest request =
-                new GameRequest("7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, 1L, 1L, Set.of());
+                new GameRequest("7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, Set.of(1L), 1L, Set.of());
 
         mockMvc.perform(post("/api/games")
                         .header("Authorization", bearer(clientToken))
@@ -78,7 +78,7 @@ class GameControllerIT extends AbstractIntegrationTest {
         long publisherId = createPublisher(adminToken, "Days of Wonder");
 
         GameRequest createRequest = new GameRequest(
-                "7 Wonders", "Jeu de civilisation", new BigDecimal("39.90"), 2010, 10, categoryId, publisherId, Set.of());
+                "7 Wonders", "Jeu de civilisation", new BigDecimal("39.90"), 2010, 10, Set.of(categoryId), publisherId, Set.of());
 
         String createBody = mockMvc.perform(post("/api/games")
                         .header("Authorization", bearer(adminToken))
@@ -96,7 +96,7 @@ class GameControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[0].name").value("7 Wonders"));
 
         GameRequest updateRequest = new GameRequest(
-                "7 Wonders Duel", "Version 2 joueurs", new BigDecimal("29.90"), 2015, 5, categoryId, publisherId, Set.of());
+                "7 Wonders Duel", "Version 2 joueurs", new BigDecimal("29.90"), 2015, 5, Set.of(categoryId), publisherId, Set.of());
         mockMvc.perform(put("/api/games/{id}", gameId)
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)

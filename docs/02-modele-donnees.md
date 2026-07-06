@@ -21,7 +21,7 @@ Objectif : reprendre les classes `model` du stagiaire, corriger les incohérence
 
 | Association | Cardinalités | Commentaire |
 |---|---|---|
-| JEU — APPARTIENT — CATEGORIE | (0,n) — (1,1) | un jeu a une catégorie, une catégorie regroupe plusieurs jeux |
+| JEU — APPARTIENT — CATEGORIE | (0,n) — (0,n) | un jeu peut appartenir à plusieurs catégories (ex. « stratégie » et « ambiance »), une catégorie regroupe plusieurs jeux → association porteuse `JEU_CATEGORIE` |
 | JEU — EDITE_PAR — EDITEUR | (0,n) — (1,1) | un jeu a un éditeur, un éditeur publie plusieurs jeux |
 | JEU — ECRIT_PAR — AUTEUR | (0,n) — (0,n) | plusieurs auteurs par jeu, plusieurs jeux par auteur → association porteuse `JEU_AUTEUR` |
 | UTILISATEUR — PASSE — COMMANDE | (1,1) — (0,n) | une commande appartient à un seul utilisateur |
@@ -40,7 +40,8 @@ UTILISATEUR (id, prenom, nom, email, mot_de_passe, role, date_creation)
 CATEGORIE (id, nom)
 EDITEUR (id, nom)
 AUTEUR (id, nom)
-JEU (id, nom, description, prix, annee_edition, quantite_stock, #categorie_id, #editeur_id)
+JEU (id, nom, description, prix, annee_edition, quantite_stock, #editeur_id)
+JEU_CATEGORIE (#jeu_id, #categorie_id)
 JEU_AUTEUR (#jeu_id, #auteur_id)
 COMMANDE (id, date_commande, statut, #utilisateur_id)
 LIGNE_COMMANDE (id, quantite, prix_unitaire, #commande_id, #jeu_id)
@@ -144,7 +145,7 @@ classDiagram
     WishlistItem "0..*" --> "1" Game
     Review "0..*" --> "1" Game : porte sur
 
-    Game "0..*" --> "1" Category : appartient à
+    Game "0..*" --> "0..*" Category : appartient à
     Game "0..*" --> "1" Publisher : édité par
     Game "0..*" --> "0..*" Author : écrit par
 ```
@@ -155,7 +156,7 @@ classDiagram
 |---|---|---|
 | Aucune annotation JPA sur les modèles, alors que `spring-boot-starter-data-jpa` est déclaré | Ajout de `@Entity`, `@Id`, `@GeneratedValue`, `@ManyToOne`, `@OneToMany`, `@ManyToMany` | Permet réellement d'utiliser Hibernate comme demandé, au lieu du JDBC brut du contrôleur |
 | `Game.auteur` en `String` alors qu'une entité `Author` existe | `Game` référence désormais `Set<Author>` via une table d'association `game_author` | Un jeu peut avoir plusieurs auteurs (cas fréquent en jeu de société) ; élimine la redondance/incohérence de données |
-| `Game.genre` (String) et `Game.category` (objet) redondants | Un seul champ `category` (`@ManyToOne`) | Une seule source de vérité pour la catégorie d'un jeu (normalisation) |
+| `Game.genre` (String) et `Game.category` (objet) redondants | Un seul champ `categories` (`@ManyToMany`, table `game_category`), remplaçant l'ancien `category` unique (`@ManyToOne`) | Une seule source de vérité pour la/les catégorie(s) d'un jeu (normalisation) ; un jeu de société entre fréquemment dans plusieurs catégories (ex. « stratégie » et « famille »), une relation 1-n était trop restrictive |
 | `Inventory` = `HashMap<Game, Integer>` en attribut d'objet, non persistable par Hibernate | Supprimé ; le stock devient l'attribut `Game.stockQuantity` | Pas de besoin métier de suivre plusieurs entrepôts ; une table séparée aurait été une sur-ingénierie |
 | `Purchase` sans lien vers l'utilisateur qui commande | Ajout de `Purchase.user` (`@ManyToOne`) | Une commande doit obligatoirement être rattachée à un client |
 | `Purchase` avec 3 booléens (`paid`, `delivered`, `archived`) | Remplacés par un unique enum `OrderStatus` (`PENDING`, `PAID`, `DELIVERED`, `CANCELLED`) | Ces états sont mutuellement exclusifs ; des booléens indépendants permettent des combinaisons incohérentes (ex : `archived=true` et `paid=false`) |

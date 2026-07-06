@@ -64,7 +64,7 @@ class GameServiceImplTest {
                 .name("7 Wonders")
                 .price(new BigDecimal("39.90"))
                 .stockQuantity(10)
-                .category(category)
+                .categories(Set.of(category))
                 .publisher(publisher)
                 .authors(Set.of())
                 .build();
@@ -72,12 +72,12 @@ class GameServiceImplTest {
 
     private GameRequest requestFor(Category category, Publisher publisher) {
         return new GameRequest(
-                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, category.getId(), publisher.getId(), Set.of());
+                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, Set.of(category.getId()), publisher.getId(), Set.of());
     }
 
     @Test
     void create_whenCategoryMissing_throwsNotFound() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.empty());
+        when(categoryRepository.findAllById(Set.of(1L))).thenReturn(List.of());
 
         assertThatThrownBy(() -> gameService.create(requestFor(category, publisher)))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -85,7 +85,7 @@ class GameServiceImplTest {
 
     @Test
     void create_whenPublisherMissing_throwsNotFound() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllById(Set.of(1L))).thenReturn(List.of(category));
         when(publisherRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> gameService.create(requestFor(category, publisher)))
@@ -94,38 +94,38 @@ class GameServiceImplTest {
 
     @Test
     void create_whenAuthorIdInvalid_throwsNotFound() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllById(Set.of(1L))).thenReturn(List.of(category));
         when(publisherRepository.findById(1L)).thenReturn(Optional.of(publisher));
         when(authorRepository.findAllById(Set.of(42L))).thenReturn(List.of());
 
         GameRequest request = new GameRequest(
-                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, 1L, 1L, Set.of(42L));
+                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, Set.of(1L), 1L, Set.of(42L));
 
         assertThatThrownBy(() -> gameService.create(request)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void create_savesGame() {
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllById(Set.of(1L))).thenReturn(List.of(category));
         when(publisherRepository.findById(1L)).thenReturn(Optional.of(publisher));
         when(gameRepository.save(any(Game.class))).thenReturn(game);
 
         GameResponse result = gameService.create(requestFor(category, publisher));
 
         assertThat(result.name()).isEqualTo("7 Wonders");
-        assertThat(result.category().name()).isEqualTo("Stratégie");
+        assertThat(result.categories()).extracting("name").containsExactly("Stratégie");
     }
 
     @Test
     void create_withAuthors_resolvesAuthorSet() {
         Author author = Author.builder().id(5L).name("Antoine Bauza").build();
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllById(Set.of(1L))).thenReturn(List.of(category));
         when(publisherRepository.findById(1L)).thenReturn(Optional.of(publisher));
         when(authorRepository.findAllById(Set.of(5L))).thenReturn(List.of(author));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         GameRequest request = new GameRequest(
-                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, 1L, 1L, Set.of(5L));
+                "7 Wonders", "desc", new BigDecimal("39.90"), 2010, 10, Set.of(1L), 1L, Set.of(5L));
 
         GameResponse result = gameService.create(request);
 
@@ -150,12 +150,12 @@ class GameServiceImplTest {
     @Test
     void update_updatesFields() {
         when(gameRepository.findById(1L)).thenReturn(Optional.of(game));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+        when(categoryRepository.findAllById(Set.of(1L))).thenReturn(List.of(category));
         when(publisherRepository.findById(1L)).thenReturn(Optional.of(publisher));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         GameRequest request = new GameRequest(
-                "7 Wonders Duel", "desc", new BigDecimal("29.90"), 2015, 5, 1L, 1L, Set.of());
+                "7 Wonders Duel", "desc", new BigDecimal("29.90"), 2015, 5, Set.of(1L), 1L, Set.of());
 
         GameResponse result = gameService.update(1L, request);
 
